@@ -86,6 +86,33 @@ class Player extends Object {
 	}
 }
 
+class Enemy extends Object {
+	constructor(x0, y0, color, ctx) {
+		super(x0, y0);
+		this.color = color;
+		this.vx = 1;
+		this.vy = 0;
+		this.ctx = ctx;
+	}
+	draw() {
+		// body
+		this.ctx.fillStyle = this.color;
+		this.ctx.fillRect(this.x, this.y, this.width, this.height);
+		// eye
+		this.ctx.fillStyle = 'black';
+		this.ctx.fillRect(this.x + 1, this.y + 2 + this.vy, 2, 1);
+		this.ctx.fillRect(this.x + 5, this.y + 2 + this.vy, 2, 1);
+		this.ctx.fillRect(this.x + 2, this.y + 4 + this.vy, 4, 1);
+	}
+	move() {
+		this.x += this.vx;
+		this.y += this.vy;
+		// teleport horizontal
+		if (gameWidth * cellSize < this.x + this.width) this.x = cellSize;
+		else if (this.x < 0) this.x = gameWidth * cellSize - cellSize;
+	}
+}
+
 class Map {
 	constructor(map, ctx) {
 		this.barriers = [];
@@ -140,9 +167,10 @@ class Map {
 }
 
 class Game {
-	constructor(map, players, canvas, ctx) {
+	constructor(map, players, enemies, canvas, ctx) {
 		this.map = map;
 		this.players = players;
+		this.enemies = enemies;
 		this.score = 0;
 		this.powerUpActive = false;
 		this.canvas = canvas;
@@ -156,23 +184,24 @@ class Game {
 			second.y < first.y + first.height
 		);
 	}
-	checkBarrierCollsion(other) {
+	checkBarrierCollision(other) {
 		return this.map.barriers.some((barrier) =>
 			this.checkCollision(barrier, other)
 		);
 	}
-	checkCoinsEaten(other) {
+	checkCoinsEaten(player) {
 		this.map.coins = this.map.coins.filter((coin) => {
-			if (this.checkCollision(coin, other)) {
-				this.score += 10;
+			if (this.checkCollision(coin, player)) {
+				this.score += 100;
 				return false;
 			}
 			return true;
 		});
 	}
-	checkPowerUpsEaten(other) {
+	checkPowerUpsEaten(player) {
 		this.map.powerUps = this.map.powerUps.filter((coin) => {
-			if (this.checkCollision(coin, other)) {
+			if (this.checkCollision(coin, player)) {
+				this.score += 500;
 				this.powerUpActive = true;
 				// TODO: turn to false after something
 				return false;
@@ -180,6 +209,16 @@ class Game {
 			return true;
 		});
 	}
+
+	checkEnemyCollision(player) {
+		this.enemies.forEach((e) => {
+			if (this.checkCollision(e, player)) {
+				// TODO: finish game, or something
+				alert('GAME OVER!!!');
+			}
+		});
+	}
+
 	simulateMovement(object, vx, vy) {
 		return {
 			x: object.x + vx,
@@ -189,17 +228,23 @@ class Game {
 		};
 	}
 	tick() {
+		this.enemies.forEach((e) => {
+			const nextMove = this.simulateMovement(e, e.vx, e.vy);
+			if (!this.checkBarrierCollision(nextMove)) e.move();
+		});
 		this.players.forEach((p) => {
 			// attemp direction change
 			const attempChange = this.simulateMovement(p, p.nextVx, p.nextVy);
-			if (!this.checkBarrierCollsion(attempChange)) p.setVelocity();
+			if (!this.checkBarrierCollision(attempChange)) p.setVelocity();
 			// move if possible
 			const nextMove = this.simulateMovement(p, p.vx, p.vy);
-			if (!this.checkBarrierCollsion(nextMove)) p.move();
+			if (!this.checkBarrierCollision(nextMove)) p.move();
 			// eat coin if posible
 			this.checkCoinsEaten(p);
 			// eat power if posible
 			this.checkPowerUpsEaten(p);
+			// die if possible
+			this.checkEnemyCollision(p);
 		});
 	}
 	draw() {
@@ -213,6 +258,7 @@ class Game {
 	drawObjects() {
 		this.map.draw();
 		this.players.forEach((p) => p.draw());
+		this.enemies.forEach((e) => e.draw());
 	}
 	drawUI() {
 		ctx.fillStyle = 'white';
@@ -232,9 +278,15 @@ class Game {
 }
 
 const map = new Map(MAP_STRING, ctx);
-const p1 = new Player(8 * 13, 8 * 17, 'red', ctx);
-const p2 = new Player(8 * 14, 8 * 17, 'lime', ctx);
-const game = new Game(map, [p1, p2], canvas, ctx);
+const p1 = new Player(cellSize * 13, cellSize * 17, 'magenta', ctx);
+const p2 = new Player(cellSize * 14, cellSize * 17, 'cyan', ctx);
+const enemies = [
+	new Enemy(cellSize, cellSize, 'red', ctx),
+	new Enemy(cellSize * 16, cellSize, 'red', ctx),
+	new Enemy(cellSize, cellSize * 29, 'red', ctx),
+	new Enemy(cellSize * 16, cellSize * 29, 'red', ctx),
+];
+const game = new Game(map, [p1, p2], enemies, canvas, ctx);
 
 // Input control
 const keyDowns$ = rxjs.fromEvent(window, 'keydown');

@@ -47,9 +47,9 @@ class Object {
 }
 
 class Player extends Object {
-	constructor(x0, y0, ctx) {
+	constructor(x0, y0, color, ctx) {
 		super(x0, y0);
-		this.score = 0;
+		this.color = color;
 		this.vx = 0;
 		this.vy = 0;
 		this.hasNextVelocity = false;
@@ -75,8 +75,14 @@ class Player extends Object {
 		this.nextVy = vy;
 	}
 	draw() {
-		this.ctx.fillStyle = 'yellow';
+		// body
+		this.ctx.fillStyle = this.color;
 		this.ctx.fillRect(this.x, this.y, this.width, this.height);
+		// eye
+		this.ctx.fillStyle = 'white';
+		this.ctx.fillRect(this.x + 2, this.y + 2, 4, 4);
+		this.ctx.fillStyle = 'black';
+		this.ctx.fillRect(this.x + 3 + this.vx, this.y + 3 + this.vy, 2, 2);
 	}
 }
 
@@ -134,9 +140,12 @@ class Map {
 }
 
 class Game {
-	constructor(map, p1, ctx) {
+	constructor(map, players, canvas, ctx) {
 		this.map = map;
-		this.p1 = p1;
+		this.players = players;
+		this.score = 0;
+		this.powerUpActive = false;
+		this.canvas = canvas;
 		this.ctx = ctx;
 	}
 	checkCollision(first, second) {
@@ -152,10 +161,20 @@ class Game {
 			this.checkCollision(barrier, other)
 		);
 	}
-	checkCoinsEaten() {
+	checkCoinsEaten(other) {
 		this.map.coins = this.map.coins.filter((coin) => {
-			if (this.checkCollision(coin, this.p1)) {
-				this.p1.score += 10;
+			if (this.checkCollision(coin, other)) {
+				this.score += 10;
+				return false;
+			}
+			return true;
+		});
+	}
+	checkPowerUpsEaten(other) {
+		this.map.powerUps = this.map.powerUps.filter((coin) => {
+			if (this.checkCollision(coin, other)) {
+				this.powerUpActive = true;
+				// TODO: turn to false after something
 				return false;
 			}
 			return true;
@@ -170,66 +189,82 @@ class Game {
 		};
 	}
 	tick() {
-		// attemp direction change
-		const attempP1 = this.simulateMovement(
-			this.p1,
-			this.p1.nextVx,
-			this.p1.nextVy
-		);
-		if (!this.checkBarrierCollsion(attempP1)) p1.setVelocity();
-		// move if possible
-		const nextP1 = this.simulateMovement(this.p1, this.p1.vx, this.p1.vy);
-		if (!this.checkBarrierCollsion(nextP1)) p1.move();
-		// eat coin if posible
-		this.checkCoinsEaten();
+		this.players.forEach((p) => {
+			// attemp direction change
+			const attempChange = this.simulateMovement(p, p.nextVx, p.nextVy);
+			if (!this.checkBarrierCollsion(attempChange)) p.setVelocity();
+			// move if possible
+			const nextMove = this.simulateMovement(p, p.vx, p.vy);
+			if (!this.checkBarrierCollsion(nextMove)) p.move();
+			// eat coin if posible
+			this.checkCoinsEaten(p);
+			// eat power if posible
+			this.checkPowerUpsEaten(p);
+		});
 	}
 	draw() {
-		this.ctx.clearRect(0, 0, canvas.width, canvas.height);
+		this.ctx.filter = this.powerUpActive ? 'invert(.75)' : 'invert(0)';
+		this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+		this.ctx.fillStyle = 'black';
+		this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 		this.drawObjects();
 		this.drawUI();
 	}
 	drawObjects() {
 		this.map.draw();
-		this.p1.draw();
+		this.players.forEach((p) => p.draw());
 	}
 	drawUI() {
 		ctx.fillStyle = 'white';
 		ctx.font = '16px Consolas';
-		ctx.fillText(
-			`Score: ${this.p1.score}`,
-			cellSize,
-			(gameHeight + 2) * cellSize
-		);
+		ctx.fillText(`Score: ${this.score}`, cellSize, (gameHeight + 2) * cellSize);
+	}
+
+	run() {
+		// Game main loop
+		rxjs.interval(1000 / 120).subscribe((n) => {
+			// logic
+			this.tick();
+			// draw
+			this.draw();
+		});
 	}
 }
 
 const map = new Map(MAP_STRING, ctx);
-const p1 = new Player(8 * 13, 8 * 17, ctx);
-const game = new Game(map, p1, ctx);
+const p1 = new Player(8 * 13, 8 * 17, 'red', ctx);
+const p2 = new Player(8 * 14, 8 * 17, 'lime', ctx);
+const game = new Game(map, [p1, p2], canvas, ctx);
 
 // Input control
 const keyDowns$ = rxjs.fromEvent(window, 'keydown');
 keyDowns$.subscribe((kd) => {
-	switch (kd.key) {
-		case 'ArrowUp':
+	switch (kd.key.toLowerCase()) {
+		case 'arrowup':
 			p1.setNextVelocity(0, -1);
 			break;
-		case 'ArrowRight':
+		case 'arrowright':
 			p1.setNextVelocity(1, 0);
 			break;
-		case 'ArrowDown':
+		case 'arrowdown':
 			p1.setNextVelocity(0, 1);
 			break;
-		case 'ArrowLeft':
+		case 'arrowleft':
 			p1.setNextVelocity(-1, 0);
+			break;
+		case 'w':
+			p2.setNextVelocity(0, -1);
+			break;
+		case 'd':
+			p2.setNextVelocity(1, 0);
+			break;
+		case 's':
+			p2.setNextVelocity(0, 1);
+			break;
+		case 'a':
+			p2.setNextVelocity(-1, 0);
 			break;
 	}
 });
 
-// Game main loop
-rxjs.interval(1000 / 120).subscribe((n) => {
-	// logic
-	game.tick();
-	// draw
-	game.draw();
-});
+game.run();

@@ -13,14 +13,15 @@ body {
 }
 
 #game {
-	background-color: #212121;
-	outline: 4px solid white;
-	width: 224px;
-	height: 288px;
-	transform: scale(3);
-	image-rendering: crisp-edges;
+	/* background-color: #212121; */
+	/* outline: 4px solid white; */
+	/* width: 224px; */
+	/* height: 288px; */
+	width: auto;
+	height: 100%;
 	image-rendering: -moz-crisp-edges;
-	image-rendering: -webkit-optimize-contrast;
-	image-rendering: optimize-contrast;
-	-ms-interpolation-mode: nearest-neighbor;
+	image-rendering: -webkit-crisp-edges;
+	image-rendering: pixelated;
+	image-rendering: crisp-edges;
+	/* transform: scale(3); */
 }

@@ -357,6 +357,10 @@ keyDowns$.subscribe((kd) => {
         case 'a':
             p2.setNextVelocity(-1, 0);
             break;
+        case '1':
+            // Remove player 2
+            game.players = game.players.slice(0,1);
+            break;
     }
 });
 

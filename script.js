@@ -145,6 +145,9 @@ class Map {
                 }
             }
         }
+        // Used for easier testing
+        //this.coins = this.coins.slice(0, 5);
+        //this.powerUps = this.powerUps.slice(0, 1);
     }
     draw() {
         // barriers
@@ -186,7 +189,9 @@ class Game {
         this.ctx = ctx;
         // Used to avoid multiple game over alerts
         this.gameOver = false;
-        // Used to cancel previous time when new powerUp is eaten while previous is active
+        // Used to avoid multiple game won alters
+        this.gameWon = false;
+        // Used to cancel previous timer when new powerUp is eaten while previous is active
         this.powerUpTimer = null;
     }
     checkCollision(first, second) {
@@ -228,7 +233,6 @@ class Game {
         this.enemies.forEach((e) => {
             if (this.checkCollision(e, player)) {
                 if (this.powerUpActive) {
-                    console.log("killed enemy");
                     e.x = cellSize * 13;
                     e.y = cellSize * 11;
                 } else if (!this.gameOver) {
@@ -256,7 +260,16 @@ class Game {
         }
         else e.move();
     }
+    checkWin() {
+        if (this.map.powerUps.length + this.map.coins.length === 0 && !this.gameWon) {
+            this.gameWon = true;
+            alert(`GAME WON!!!\nFINAL SCORE: ${this.score}`);
+            window.location.reload();
+        }
+    }
     tick() {
+        // check if all coins and powerups have been eaten
+        this.checkWin();
         this.enemies.forEach((e) => {
             this.enemyMovement(e)
         });

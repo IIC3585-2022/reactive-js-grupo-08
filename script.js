@@ -36,6 +36,8 @@ const gameWidth = 28;
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 
+let gameOver = false;
+
 // Basic object
 class Object {
 	constructor(x0, y0) {
@@ -221,8 +223,8 @@ class Game {
 
 	checkEnemyCollision(player) {
 		this.enemies.forEach((e) => {
-			if (this.checkCollision(e, player)) {
-				// TODO: finish game, or something
+			if (this.checkCollision(e, player) && !gameOver) {
+			    gameOver = true
 				alert('GAME OVER!!!');
 				window.location.reload();
 			}

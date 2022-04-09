@@ -36,6 +36,7 @@ const gameWidth = 28;
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 
+// Used to avoid multiple game over alerts
 let gameOver = false;
 
 // Basic object
@@ -214,7 +215,7 @@ class Game {
 			if (this.checkCollision(coin, player)) {
 				this.score += 500;
 				this.powerUpActive = true;
-				// TODO: turn to false after something
+				setTimeout(() => this.powerUpActive = false, 3_000)
 				return false;
 			}
 			return true;

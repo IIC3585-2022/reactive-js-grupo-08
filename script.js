@@ -334,28 +334,28 @@ const game = new Game(map, [p1, p2], enemies, canvas, ctx);
 const keyDowns$ = rxjs.fromEvent(window, 'keydown');
 keyDowns$.subscribe((kd) => {
     switch (kd.key.toLowerCase()) {
-        case 'arrowup':
+        case 'w':
             p1.setNextVelocity(0, -1);
             break;
-        case 'arrowright':
+        case 'd':
             p1.setNextVelocity(1, 0);
             break;
-        case 'arrowdown':
+        case 's':
             p1.setNextVelocity(0, 1);
             break;
-        case 'arrowleft':
+        case 'a':
             p1.setNextVelocity(-1, 0);
             break;
-        case 'w':
+        case 'arrowup':
             p2.setNextVelocity(0, -1);
             break;
-        case 'd':
+        case 'arrowright':
             p2.setNextVelocity(1, 0);
             break;
-        case 's':
+        case 'arrowdown':
             p2.setNextVelocity(0, 1);
             break;
-        case 'a':
+        case 'arrowleft':
             p2.setNextVelocity(-1, 0);
             break;
         case '1':

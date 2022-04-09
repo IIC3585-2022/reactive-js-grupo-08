@@ -235,6 +235,7 @@ class Game {
                 if (this.powerUpActive) {
                     e.x = cellSize * 13;
                     e.y = cellSize * 11;
+                    this.score += 1000;
                 } else if (!this.gameOver) {
                     this.gameOver = true
                     alert('GAME OVER!!!');

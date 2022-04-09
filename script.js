@@ -215,6 +215,7 @@ class Game {
 			if (this.checkCollision(e, player)) {
 				// TODO: finish game, or something
 				alert('GAME OVER!!!');
+				window.location.reload();
 			}
 		});
 	}

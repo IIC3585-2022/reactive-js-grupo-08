@@ -111,6 +111,15 @@ class Enemy extends Object {
 		if (gameWidth * cellSize < this.x + this.width) this.x = cellSize;
 		else if (this.x < 0) this.x = gameWidth * cellSize - cellSize;
 	}
+
+	randomizeMovement() {
+		const choices = [-1, 0, 1]
+		const nonZeroChoices = [-1, 1]
+		this.vx = choices[Math.floor(Math.random() * choices.length)]
+		
+		const verticalChoices = this.vx === 0 ? nonZeroChoices : choices;
+		this.vy = verticalChoices[Math.floor(Math.random() * verticalChoices.length)]
+	}
 }
 
 class Map {
@@ -228,10 +237,17 @@ class Game {
 			height: object.height,
 		};
 	}
+	enemyMovement(e){
+		const nextMove = this.simulateMovement(e, e.vx, e.vy);
+		if (this.checkBarrierCollision(nextMove)) { 
+			e.randomizeMovement();
+			this.enemyMovement(e)
+		}
+		else e.move();
+	}
 	tick() {
 		this.enemies.forEach((e) => {
-			const nextMove = this.simulateMovement(e, e.vx, e.vy);
-			if (!this.checkBarrierCollision(nextMove)) e.move();
+			this.enemyMovement(e)
 		});
 		this.players.forEach((p) => {
 			// attemp direction change
